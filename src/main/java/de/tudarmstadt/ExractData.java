@@ -41,7 +41,7 @@ public class ExractData {
 		}
 	}
 
-	private static void extactDataToJSON() {
+	public static void extactDataToJSON() {
 		try {
 			List<String> commandList = new ArrayList<String>();
 			commandList.add("sh");

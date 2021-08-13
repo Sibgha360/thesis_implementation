@@ -20,14 +20,13 @@ class DbUtil {
 		}
 	}
 
-	public static void insertIndicator(Integer companyId ,String indicator, Double value, String currency, String unit, String year, int tableNumber) {
-		try {
+	public static void insertIndicator(Integer companyId ,String indicator, Double value, String currency, String unit, String year, int tableNumber, String context, int reportNumber) throws Throwable {
 			Class.forName("com.mysql.jdbc.Driver");
 			Connection con = DriverManager.getConnection(
 					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
 			// the mysql insert statement
-			String query = " insert into indicator (company_id, indicator_name, value, unit, currency, year, table_number)"
-					+ " values (?, ?, ?, ?, ?, ?, ?)";
+			String query = " insert into indicator (company_id, indicator_name, value, unit, currency, year, table_number, report_number, context)"
+					+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 			// create the mysql insert preparedstatement
 			PreparedStatement preparedStmt = con.prepareStatement(query);
@@ -38,14 +37,14 @@ class DbUtil {
 			preparedStmt.setString(5, currency);
 			preparedStmt.setString(6, year);
 			preparedStmt.setInt(7, tableNumber);
+			preparedStmt.setInt(8, reportNumber);
+			preparedStmt.setString(9, context);
+			
 
 			// execute the preparedstatement
 			preparedStmt.execute();
 
 			con.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static Integer getCompanyId(String companyName) {

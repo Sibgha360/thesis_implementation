@@ -1,23 +1,39 @@
 package de.tudarmstadt;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class Main {
 
 	public static void main(String[] args) throws InterruptedException {
+		
+//		ExractData.extactDataToJSON();
+		
 		parse();
 
 		// convert the json into RDBMS
@@ -30,19 +46,76 @@ public class Main {
 		// TODO Auto-generated method sextractUnitextractUnittub
 
 	}
+	
 
 	@SuppressWarnings("unchecked")
 	private static void parse() {
-		JSONParser parser = new JSONParser();
-		try {
-			int tableNumber = 1;
-			String companyName = "adidas";
+		int reportNumber = 1;
 
+		int tableNumber = 3;
+		String companyName = "puma";
+		
+		
+		try {
+			File folder = new File("/home/sibgha/thesis-files/json");
+		 
+			 // Creating a filter to return only files.
+            FileFilter fileFilter = new FileFilter()
+            {
+                @Override
+                public boolean accept(File file) {
+                    return !file.isDirectory();
+                }
+            };
+            
+			File[] listOfFiles = folder.listFiles(fileFilter);
+
+            Arrays.sort(listOfFiles);
+
+			for (int i = 0; i < listOfFiles.length; i++) {
+				String filename = listOfFiles[i].getName();
+				if (listOfFiles[i].isFile()) {
+					{
+						filename = FilenameUtils.removeExtension(filename);
+
+						Pattern p = Pattern.compile("\\d+");
+						Matcher m = p.matcher(filename);
+						while (m.find())
+							tableNumber = Integer.valueOf(m.group());
+
+						Pattern p1 = Pattern.compile("([A-Za-z]+)");
+						Matcher m1 = p1.matcher(filename);
+						while (m1.find())
+							companyName = m1.group();
+
+						saveFileDataToMysql(reportNumber, tableNumber, companyName);
+//					System.out.println(companyName+tableNumber);
+					}
+				}
+				// safe check
+				else if (listOfFiles[i].isDirectory()) {
+					System.out.println(
+							"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx  Directory " + filename);
+				}
+			}
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void saveFileDataToMysql( int reportNumber, int tableNumber, String companyName) throws FileNotFoundException, IOException, ParseException
+			 {
+
+		final List<String> contextForLogging = new ArrayList<String>();
 			// get company id from the database
 			Integer companyId = DbUtil.getCompanyId(companyName);
 
+			JSONParser parser = new JSONParser();
+
 			Object jsonFileParsed = parser
-					.parse(new FileReader("/home/sibgha/thesis-files/" + companyName + tableNumber + ".json"));
+					.parse(new FileReader("/home/sibgha/thesis-files/json/" + companyName + tableNumber + ".json"));
 
 			// A JSON object. Key value pairs are unordered. JSONObject supports
 			// java.util.Map interface.
@@ -60,10 +133,20 @@ public class Main {
 			// currency
 			String currecy = extractCurrency(jsonArray);
 			System.out.println(currecy);
+			
+			if(currecy==null)
+			{
+				return;
+			}
 
+			
+			List<Integer> firstValidIndicatorRowIndex = new ArrayList<Integer>();
+			
 			yearIndexMap.forEach((year, yearIndex) -> {
-
-				jsonArray.forEach(object -> {
+				IntStream.range(0, jsonArray.size()).forEach(idx -> {
+					Object object = jsonArray.get(idx);
+					
+					
 					Set keySet = ((JSONObject) object).keySet();
 					Collection values = ((JSONObject) object).values();
 
@@ -97,18 +180,51 @@ public class Main {
 					if (indicator.isEmpty()) {
 						return;
 					}
+					
+
+					if(firstValidIndicatorRowIndex.size()<=0) {
+						firstValidIndicatorRowIndex.add(idx);
+					}
+					
+					final Integer maxIndexContext = firstValidIndicatorRowIndex.get(0);
 
 					Double value = Double.valueOf(indicatorValue);
 
-					DbUtil.insertIndicator(companyId, indicator, value, currecy, unit, year, tableNumber);
-				});
-			});
+					// everything above firstValidIndicatorRowIndex is the context
 
+					String context = extractContext(jsonArray, maxIndexContext);
+					contextForLogging.add(context);
+
+					try {
+						DbUtil.insertIndicator(companyId, indicator, value, currecy, unit, year, tableNumber, context, reportNumber);
+					} catch (Throwable e) {
+						// TODO Auto-generated catch block
+						System.err.println(e.toString());
+						String ctx = (contextForLogging.size() > 0) ? contextForLogging.get(0) : "no context";
+						System.err.println(companyName+ ", " +tableNumber+", "+ctx);
+						e.printStackTrace();
+					}
+				});				
+				
+//				jsonArray.forEach(object ->
+//									});
+			});
+		 
 //			2021 index 0 2020 index 1 and so on
-			List<Map<String, Integer>> listOfIndicators;
-		} catch (Exception e) {
-			e.printStackTrace();
+		List<Map<String, Integer>> listOfIndicators;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static String extractContext(JSONArray jsonArray, final Integer maxIndexContext) {
+		StringBuilder b = new StringBuilder();
+		for (int n = 0; n < maxIndexContext-1; n++) {
+			Object obj = jsonArray.get(n);
+
+			b.append(((JSONObject) obj).values().stream().map(Object::toString).filter(x -> !x.toString().isEmpty()).collect(Collectors.joining(" ")).toString());
+			b.append(" ");
 		}
+		
+		return b.toString();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -138,7 +254,7 @@ public class Main {
 	}
 
 	private static String getUnit(Object[] valuesArray) {
-		String unit = null;
+		String unit = "NA";
 		for (int n = 0; n < valuesArray.length; n++) {
 			if (valuesArray[n].toString().contains("billion") || valuesArray[n].toString().contains("billions")) {
 				unit = "B";
