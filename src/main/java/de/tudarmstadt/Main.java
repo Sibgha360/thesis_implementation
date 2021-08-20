@@ -28,6 +28,11 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * 
+ * @author Sibgha
+ *
+ */
 public class Main {
 
 	public static void main(String[] args) throws InterruptedException {
@@ -57,7 +62,7 @@ public class Main {
 		
 		
 		try {
-			File folder = new File("/home/sibgha/thesis-files/json");
+			File folder = new File("/home/sibgha/thesis-files/json/astra");
 		 
 			 // Creating a filter to return only files.
             FileFilter fileFilter = new FileFilter()
@@ -87,7 +92,10 @@ public class Main {
 						Matcher m1 = p1.matcher(filename);
 						while (m1.find())
 							companyName = m1.group();
-
+						if (tableNumber > 291) {
+							int u = 0;
+							int ii = u;
+						}
 						saveFileDataToMysql(reportNumber, tableNumber, companyName);
 //					System.out.println(companyName+tableNumber);
 					}
@@ -139,6 +147,7 @@ public class Main {
 				return;
 			}
 
+			int o=0;
 			
 			List<Integer> firstValidIndicatorRowIndex = new ArrayList<Integer>();
 			
@@ -256,24 +265,39 @@ public class Main {
 	private static String getUnit(Object[] valuesArray) {
 		String unit = "NA";
 		for (int n = 0; n < valuesArray.length; n++) {
-			if (valuesArray[n].toString().contains("billion") || valuesArray[n].toString().contains("billions")) {
+			String string = valuesArray[n].toString();
+			if (string.contains("billion") || string.contains("billions") || (isCurrencySign(string) && (string.contains("b")))) {
 				unit = "B";
 				return unit;
 			}
-			if (valuesArray[n].toString().contains("million") || valuesArray[n].toString().contains("millions")) {
+			if (string.contains("million") || string.contains("millions") || (isCurrencySign(string) && (string.contains("m")))) {
 				unit = "M";
 				return unit;
 			}
-			if (valuesArray[n].toString().contains("thousand") || valuesArray[n].toString().contains("thousands")) {
-				unit = "T";
+			if (string.contains("thousand") || string.contains("thousands") || (isCurrencySign(string) && (string.contains("th")))) {
+				unit = "TH";
 				return unit;
 			}
-			if (valuesArray[n].toString().contains("hundred") || valuesArray[n].toString().contains("hundreds")) {
+			if (string.contains("hundred") || string.contains("hundreds") || (isCurrencySign(string) && (string.contains("h")))) {
 				unit = "H";
 				return unit;
 			}
 		}
 		return unit;
+	}
+
+	private static boolean isCurrencySign(String string) {
+		return containsEuroSign(string) || containsDollarSign(string) || containsPoundSign(string);
+	}
+
+	private static boolean containsEuroSign(String string) {
+		return string.toLowerCase().contains("euros") || string.toLowerCase().contains("euro") || string.contains("$") || string.contains("\u0024");
+	}
+	private static boolean containsDollarSign(String string) {
+		return string.toLowerCase().contains("usd") || string.toLowerCase().contains("dollars") || string.toLowerCase().contains("dollar") || string.contains("$") || string.contains("\\u20AC");
+	}
+	private static boolean containsPoundSign(String string) {
+		return string.toLowerCase().contains("pound") || string.toLowerCase().contains("pounds") || string.contains("£") || string.contains("\u00a3");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -389,13 +413,12 @@ public class Main {
 			}
 			if (valuesArray[n].toString().toLowerCase().contains("pound")
 					|| valuesArray[n].toString().toLowerCase().contains("pounds")
-					|| valuesArray[n].toString().toLowerCase().contains("\u00a3")) {
+					|| valuesArray[n].toString().toLowerCase().contains("\u00a3")
+					|| valuesArray[n].toString().toLowerCase().contains("£")) {
 				unit = "GBP";
 				return unit;
 			}
-			if (valuesArray[n].toString().toLowerCase().contains("usd")
-					|| valuesArray[n].toString().toLowerCase().contains("dollar")
-					|| valuesArray[n].toString().toLowerCase().contains("dollars")) {
+			if (containsDollarSign(valuesArray[n].toString())) {
 				unit = "USD";
 				return unit;
 			}

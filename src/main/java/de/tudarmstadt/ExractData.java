@@ -6,11 +6,16 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 
+ * @author Sibgha
+ *
+ */
 public class ExractData {
 
 	public static void main(String[] args) {
 		extactDataToJSON();
-		extractDataToCSV();
+//		extractDataToCSV();
 	}
 
 	private static void extractDataToCSV() {
