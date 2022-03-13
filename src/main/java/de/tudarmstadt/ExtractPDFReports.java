@@ -11,7 +11,7 @@ import java.util.List;
  * @author Sibgha
  *
  */
-public class ExractData {
+public class ExtractPDFReports {
 
 	public static void main(String[] args) {
 		extactDataToJSON();
@@ -55,6 +55,8 @@ public class ExractData {
 
 			ProcessBuilder processBuilder = new ProcessBuilder(commandList);
 			processBuilder.redirectErrorStream(true);
+			processBuilder.redirectOutput();
+
 			Process process = processBuilder.start();
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
