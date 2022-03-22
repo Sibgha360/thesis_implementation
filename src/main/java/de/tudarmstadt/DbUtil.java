@@ -10,7 +10,7 @@ class DbUtil {
 	}
 
 	public static void insertIndicator(Integer companyId, String indicator, Double value, String currency, String unit,
-			String year, int tableNumber, String context, int reportNumber) throws Throwable {
+			String year, int tableNumber, String context, int reportNumber, String pdfPath) throws Throwable {
 		Class.forName("com.mysql.jdbc.Driver");
 		Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false",
 				"sibgha", "1234asdf");
@@ -175,6 +175,12 @@ class DbUtil {
 					String indicator = rs.getString("indicator_name");
 					int indicatorId = rs.getInt("indicator_id");
 					int companyId = rs.getInt("company_id");
+					
+					if (companyId == 5)
+					{
+						System.out.println("stop");
+					}
+					
 					String year = rs.getString("year");
 					String currency = rs.getString("currency");
 					Double value = rs.getDouble("value");
@@ -264,6 +270,7 @@ class Report {
 	private Integer reportId;
 	private String reportUri;
 	private String companyName;
+	private String pdfPath;
 
 	public Report() {
 	}
@@ -305,5 +312,13 @@ class Report {
 
 	public void setReportUri(String reportUri) {
 		this.reportUri = reportUri;
+	}
+
+	public String getPdfPath() {
+		return pdfPath;
+	}
+
+	public void setPdfPath(String pdfPath) {
+		this.pdfPath = pdfPath;
 	}
 }

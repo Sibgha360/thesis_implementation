@@ -85,10 +85,6 @@ public class ParseAndStore {
 				if (listOfFiles[i].isFile()) {
 					{
 						filename = FilenameUtils.removeExtension(filename);
-						
-						if(filename.equals("pfizer69")) {
-							System.out.print("");
-						}
 
 						Pattern p = Pattern.compile("\\d+");
 						Matcher m = p.matcher(filename);
@@ -127,9 +123,6 @@ public class ParseAndStore {
 			// java.util.Map interface.
 			JSONArray jsonArray = (JSONArray) jsonFileParsed;
 			
-			jsonArray.forEach(object -> {
-				System.out.println(object);
-				});
 
 			// find year indexes
 			Map<String, Integer> yearIndexMap = extractYesrIndex(jsonArray);
@@ -210,10 +203,10 @@ public class ParseAndStore {
 				try {
 					if (unit == null) {
 						DbUtil.insertIndicator(companyId, indicator, value, currecy, "NA", year, tableNumber, context,
-								reportNumber);
+								reportNumber, fileName);
 					} else {
 						DbUtil.insertIndicator(companyId, indicator, value, currecy, unit, year, tableNumber, context,
-								reportNumber);
+								reportNumber, fileName);
 					}
 				} catch (Throwable e) {
 
@@ -273,10 +266,9 @@ public class ParseAndStore {
 	private static String getUnit(Object[] valuesArray) {
 		String unit = "NA";
 		for (int n = 0; n < valuesArray.length; n++) {
-			String string = valuesArray[n].toString();
+			String string = valuesArray[n].toString().toLowerCase();
 			if (string.contains("billion") || string.contains("billions") || (isCurrencySign(string) && (string.contains("b")))) {
 				unit = "B";
-				return unit;
 			}
 			if (string.contains("million") || string.contains("millions") || (isCurrencySign(string) && (string.contains("m")))) {
 				unit = "M";
