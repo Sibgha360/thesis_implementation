@@ -70,9 +70,12 @@ public class DataNormalizingService {
 					+ " indicator_name NOT REGEXP '"+notRgx+"'"
 					+ " " + rgx.toString()
 					+ " and  normalized_indicator_id > 0";
-			
-			Boolean b = stmt.execute(sql);
-					//+ " indicator_name like '" + ind + "' and  normalized_indicator_id > 0");
+		ResultSet rs = stmt.executeQuery(sql);
+
+		while (rs.next()) {
+			int normalizedIndicatorId = rs.getInt("normalized_indicator_id");
+			int companyId = rs.getInt("company_id");
+			String year = rs.getString("year");
 
 			if(DbUtil.getSelectedAlias(alias, companyId, year) != null)
 			{
