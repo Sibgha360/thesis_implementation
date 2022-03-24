@@ -2,43 +2,27 @@ package de.tudarmstadt;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-public class NormalizeData {
-	private final static String aliasFilePath = "/home/sibgha/thesis-files/aliases.csv";
-//	private final static String aliasFilePath = "/home/sibgha/thesis-files/temp/alias.json";
+public class DataNormalizingService {
 
-	// create a map
+	// a map to keep aliases in the memory
 	public static HashMap<String, List<String>> map = new HashMap<String, List<String>>();
 
-	public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
-		copyAliasesInMemory();
-
-		normalize();
-	}
-
-	private static void normalize() {
+	public static void asingAliases() {
 
 		map.forEach((alias, indicators) -> {
 
@@ -49,7 +33,6 @@ public class NormalizeData {
 			try {
 				setAliasInNormalizedIndicator(alias, indicators);
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
@@ -63,7 +46,7 @@ public class NormalizeData {
 		StringBuilder rgx = new StringBuilder();
 		for (String ind : indicators) {
 			try {
-				if(ind.isBlank()|| ind.isEmpty())
+				if(ind.isEmpty())
 				{
 					continue;
 				}
@@ -75,20 +58,58 @@ public class NormalizeData {
 			}
 
 		}
-		
-		try {
-			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
 
-			Statement stmt = con.createStatement();
-			String sql = "update normalized_indicator set alias = '" + alias
-					+ "' where"
+		try{
+		Class.forName("com.mysql.jdbc.Driver");
+
+		Connection con = DriverManager.getConnection(
+				"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+
+		Statement stmt = con.createStatement();
+			String sql = "select normalized_indicator_id, company_id, year from normalized_indicator where"
 					+ " indicator_name NOT REGEXP '"+notRgx+"'"
 					+ " " + rgx.toString()
 					+ " and  normalized_indicator_id > 0";
 			
 			Boolean b = stmt.execute(sql);
 					//+ " indicator_name like '" + ind + "' and  normalized_indicator_id > 0");
+
+			if(DbUtil.getSelectedAlias(alias, companyId, year) != null)
+			{
+				updateAlias(alias, notRgx, rgx);
+			}
+			else
+			{
+				updateAliasWithSelection(alias, notRgx, rgx, companyId, year);
+			}
+		}
+
+		con.close();}
+		catch (Throwable t)
+		{
+			t.printStackTrace();
+		}
+
+
+
+
+
+	}
+
+	public static void updateAliasWithSelection(String alias, String notRgx, StringBuilder rgx, int companyId, String year) {
+		updateAlias(alias, notRgx, rgx);
+
+		//update selection flag
+		try {
+			Connection con = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+
+
+			Statement stmt = con.createStatement();
+			String sql = "update normalized_indicator set selected = 1 where company_id = "+companyId+" and alias = "+alias+" and year = "+year+" ORDER BY value DESC limit 1";
+
+			Boolean b = stmt.execute(sql);
+			//+ " indicator_name like '" + ind + "' and  normalized_indicator_id > 0");
 
 			con.close();
 		} catch (SQLException e) {
@@ -97,9 +118,33 @@ public class NormalizeData {
 		}
 
 
+
 	}
 
-	private static void copyAliasesInMemory() throws IOException, ParseException, FileNotFoundException {
+	private static void updateAlias(String alias, String notRgx, StringBuilder rgx) {
+		try {
+			Connection con = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+
+
+			Statement stmt = con.createStatement();
+			String sql = "update normalized_indicator set alias = '" + alias
+					+ "' where"
+					+ " indicator_name NOT REGEXP '"+ notRgx +"'"
+					+ " " + rgx.toString()
+					+ " and  normalized_indicator_id > 0";
+
+			Boolean b = stmt.execute(sql);
+			//+ " indicator_name like '" + ind + "' and  normalized_indicator_id > 0");
+
+			con.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public static void copyAliasesInMemory(String aliasFilePath) throws IOException, ParseException, FileNotFoundException {
 		JSONParser parser = new JSONParser();
 
 		
@@ -136,6 +181,8 @@ public class NormalizeData {
 		    mapper.enable(SerializationFeature.INDENT_OUTPUT);
 		    mapper.writeValue(System.out, list);
 		}
+
+
 		
 //	System.out.println("");
 //		
@@ -159,6 +206,18 @@ public class NormalizeData {
 //
 //			map.put((String) object3, list);
 //		});
+	}
+
+	/**
+	 * for testing purpose
+	 * @param args
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
+		copyAliasesInMemory(Main.aliasFilePath);
+		asingAliases();
 	}
 
 }

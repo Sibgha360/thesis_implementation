@@ -135,94 +135,11 @@ class DbUtil {
 		}
 	}
 
-	
-	/**
-	 * 	//1: 
-		//
-		//normalize the data by removing the duplications and unit information must be reflected by the indicator value. For example:  
-		//sales: 13M
-		//sales: 13M
-		//
-		//Normalized form: 
-		//sales: 13000000
-		//
-		//2:
-		//
-		//remove indicators with numbers and symbols
-		//
-		//e.g. 
-		//25%
-		//2019 - 2020
-		//()
-	 */
-	//TODO handlw the amounts with dollars and brackets PLEASE
-	//TODO remove of which
-	public static void getAlphaIndicators() {
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-
-			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
-
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("select   `indicator_name`, `indicator_id`, `company_id`, `year`, `currency`, `value`, table_number, report_number, context, unit FROM  indicator "
-					+ "where  (indicator_name   NOT REGEXP  '^[^A-Za-z]' OR indicator_name    REGEXP   '^– +[A-Za-z]' OR indicator_name REGEXP '^• +[A-Za-z]' OR indicator_name    REGEXP   '^•+[A-Za-z]' )");
-			
-			// REGEXP '[a-z]' AND indicator_name   REGEXP '[A-Z]' AND indicator_name not REGEXP '[0-9]'
-
-			while (rs.next()) {
-				try {
-					String indicator = rs.getString("indicator_name");
-					int indicatorId = rs.getInt("indicator_id");
-					int companyId = rs.getInt("company_id");
-					
-					if (companyId == 5)
-					{
-						System.out.println("stop");
-					}
-					
-					String year = rs.getString("year");
-					String currency = rs.getString("currency");
-					Double value = rs.getDouble("value");
-					int tableNumber = rs.getInt("table_number");
-					int reportNumber = rs.getInt("report_number");
-					String context = rs.getString("context");
-					String unit = rs.getString("unit");
-					
-					String sql = "INSERT IGNORE INTO `mydb`.`normalized_indicator` (`indicator_name`, `indicator_id`, `company_id`, `year`, `currency`, `value`, table_number, report_number, context) VALUES (?,?,?,?,?,?,?,?,?)";
-					
-					// create the mysql insert preparedstatement
-					PreparedStatement preparedStmt = con.prepareStatement(sql);
-					preparedStmt.setString(1, indicator);
-					preparedStmt.setInt(2, indicatorId);
-					preparedStmt.setInt(3, companyId);
-					preparedStmt.setString(4, year);
-					preparedStmt.setString(5, currency);
-					preparedStmt.setDouble(6, calculateValue(unit, value));
-					preparedStmt.setInt(7, tableNumber);
-					preparedStmt.setInt(8, reportNumber);
-					preparedStmt.setString(9, context);
-
-					preparedStmt.execute();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
-
-			con.close();
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	public static void insertAlias(String alias) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false",
-					"sibgha", "1234asdf");
+					"root", "root");
 
 			// the mysql insert statement
 			String query = " insert ignore into alias (alias)"
@@ -243,7 +160,34 @@ class DbUtil {
 		}
 	}
 
-	private static double calculateValue(String unit, Double value) {
+
+	public static Integer getSelectedAlias(String alias, Integer companyId, String year) {
+
+		Integer normalizedIndicatorId = null;
+
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+
+			Connection con = DriverManager.getConnection(
+					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("select normalized_indicator_id from normalized_indicator where alias = " + alias + " and company_id = " + companyId + " and  year = "  + year + " and selected =1");
+
+			while (rs.next()) {
+				normalizedIndicatorId = rs.getInt("normalized_indicator_id");
+			}
+
+			con.close();
+
+			return normalizedIndicatorId;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public static double calculateValue(String unit, Double value, String currency) {
 		
 		if(unit.equalsIgnoreCase("h"))
 		{
@@ -261,7 +205,16 @@ class DbUtil {
 		{
 			return value * 100000000;
 		}
-		return value;
+
+
+		//add currency factor. convert to euro
+		if(currency.equalsIgnoreCase("usd"))
+		{
+			return value * Main.usdToEuroRate;
+		}
+		else{
+			return value;
+		}
 	} 
 }
 

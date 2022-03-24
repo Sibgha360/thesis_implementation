@@ -5,13 +5,11 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -33,38 +29,40 @@ import org.json.simple.parser.ParseException;
  * @author Sibgha
  *
  */
-public class ParseAndStore {
+public class DataProcessor {
 
+	/**
+	 * for the purpose of testing the single class
+	 * @param args
+	 */
 	public static void main(String[] args) throws InterruptedException {
 		
-		//creates JSON files against the company financial reports table data. This is a one time execution but future work , condition can be added around it
-		//so it only executes if it already hasnt been yet.
-//		ExractData.extactDataToJSON();
-		
+
+
 		//parses the JSON files and saves the content in the DBMS. resultant content can have a lot of duplications.
 		
 		
 		//get list of pathnames for all the reports for all the companies
-		
+		parseAndStore();
+	}
+
+	public static void parseAndStore() {
 		//get  all reports
 		List<Report> reports = DbUtil.getReports();
 		reports.forEach(report-> {
 			parseAndStore(report.getReportUri(), report.getReportId(), report.getCompanyName(), report.getCompanyId());
-			
+
 			//update the report status to executed
 			DbUtil.updateReportStatustoExecuted(report.getReportId());
 		});
 	}
- 
-		
-	private final static String baseLocation = "/home/sibgha/thesis-files";
 
 	@SuppressWarnings("unchecked")
 	private static void parseAndStore(String path, int reportNumber, String companyName, Integer companyId) {
 		Integer tableNumber = null;
 		
 		try {
-			String pathname = baseLocation + path;
+			String pathname = Main.baseLocation + path;
 			File folder = new File(pathname);
 		 
 			 // Creating a filter to return only files.
@@ -84,21 +82,19 @@ public class ParseAndStore {
 				String filename = listOfFiles[i].getName();
 				if (listOfFiles[i].isFile()) {
 					{
-						filename = FilenameUtils.removeExtension(filename);
+						String baseName = filename.replaceAll("\\.[^.]*$", "");
+						filename = baseName;
 
+						//extract table number
 						Pattern p = Pattern.compile("\\d+");
 						Matcher m = p.matcher(filename);
 						while (m.find())
 							tableNumber = Integer.valueOf(m.group());
 
-//						Pattern p1 = Pattern.compile("([A-Za-z]+)");
-//						Matcher m1 = p1.matcher(filename);
-//						while (m1.find())
-//							companyName = m1.group();
- 
 						storeDataToDatabase(reportNumber, tableNumber, companyName, pathname, companyId, filename);
 					}
 				}
+
 				// safe check
 				else if (listOfFiles[i].isDirectory()) {
 					System.out.println(
@@ -127,15 +123,15 @@ public class ParseAndStore {
 			// find year indexes
 			Map<String, Integer> yearIndexMap = extractYesrIndex(jsonArray);
 
-			yearIndexMap.forEach((s, q) -> System.out.println(s + ": " + q));
+			//yearIndexMap.forEach((s, q) -> System.out.println(s + ": " + q));
 			
 			// unit
 			String unit = extractUnit(jsonArray);
-			System.out.println(unit+"");
+			//System.out.println(unit+"");
 
 			// currency
 			String currecy = extractCurrency(jsonArray);
-			System.out.println(currecy);
+			//System.out.println(currecy);
 			
 			if(currecy==null)
 			{
@@ -159,7 +155,18 @@ public class ParseAndStore {
 
 					String indicator = valuesArray[0].toString();
 
+					//remove the comma from the value since we want a plain number
 					String indicatorValue = valuesArray[yearIndex].toString().replace(",", "");
+
+					if(tableNumber == 73){
+						int y = 0;
+					}
+
+					//this condition is for the case if the number is surrounded by a bracket
+					if(indicatorValue.length() > 0 && indicatorValue.substring(0, 1).contains("(") && indicatorValue.substring(indicatorValue.length() - 1, indicatorValue.length()).contains(")"))
+					{
+						indicatorValue = indicatorValue.substring(1, indicatorValue.length() - 1);
+					}
 
 					try {
 						Double.valueOf(indicatorValue);
@@ -195,7 +202,6 @@ public class ParseAndStore {
 					Double value = Double.valueOf(indicatorValue);
 
 					// everything above firstValidIndicatorRowIndex is the context
-
 					String context = extractContext(jsonArray, maxIndexContext);
 					contextForLogging.add(context);
 					
@@ -219,9 +225,6 @@ public class ParseAndStore {
 				
 
 			});
-		 
-//			2021 index 0 2020 index 1 and so on
-		List<Map<String, Integer>> listOfIndicators;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -378,7 +381,7 @@ public class ParseAndStore {
 			List<String> commandList = new ArrayList<String>();
 			commandList.add("sh");
 			commandList.add("-c");
-			commandList.add("python3 /home/sibgha/thesis-files/script_csv.py");
+			commandList.add("python3 thesis-files/script_csv.py");
 
 			ProcessBuilder processBuilder = new ProcessBuilder(commandList);
 			processBuilder.redirectErrorStream(true);
@@ -447,9 +450,5 @@ public class ParseAndStore {
 			}
 		}
 		return unit;
-	}
-
-	private static void analyse() {
-
 	}
 }
