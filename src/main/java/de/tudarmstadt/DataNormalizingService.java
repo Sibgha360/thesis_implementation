@@ -22,7 +22,7 @@ public class DataNormalizingService {
 	// a map to keep aliases in the memory
 	public static HashMap<String, List<String>> map = new HashMap<String, List<String>>();
 
-	public static void asingAliases() {
+	public static void assignAliases() {
 
 		map.forEach((alias, indicators) -> {
 
@@ -220,7 +220,7 @@ public class DataNormalizingService {
 	 */
 	public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
 		copyAliasesInMemory(Main.aliasFilePath);
-		asingAliases();
+		assignAliases();
 	}
 
 }

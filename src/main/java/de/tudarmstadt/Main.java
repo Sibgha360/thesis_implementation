@@ -27,7 +27,7 @@ public class Main {
 
 			//assign aliases to the indicators and selects the one indicator for each company and year from the multiple occurances
 			DataNormalizingService.copyAliasesInMemory(aliasFilePath);
-			DataNormalizingService.asingAliases();
+			DataNormalizingService.assignAliases();
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
