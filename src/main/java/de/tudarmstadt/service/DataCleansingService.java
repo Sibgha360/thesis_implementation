@@ -1,4 +1,6 @@
-package de.tudarmstadt;
+package de.tudarmstadt.service;
+
+import de.tudarmstadt.DbUtil;
 
 import java.sql.*;
 
@@ -49,7 +51,7 @@ public class DataCleansingService {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+					DbUtil.connUrl, DbUtil.user, DbUtil.password);
 
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select   `indicator_name`, `indicator_id`, `company_id`, `year`, `currency`, `value`, table_number, report_number, context, unit FROM  indicator "
@@ -103,7 +105,7 @@ public class DataCleansingService {
 	 * for the purpose of testing the single class
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args)  {
 		removeGarbageAndMoveIndicators();
 	}
 }

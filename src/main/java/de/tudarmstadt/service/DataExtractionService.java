@@ -1,4 +1,4 @@
-package de.tudarmstadt;
+package de.tudarmstadt.service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,13 +17,12 @@ public class DataExtractionService {
 	 * for the purpose of testing the single class
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args)  {
 		extactDataToJSON("/home/sibgha/thesis-files/script.py");
 	}
 
 	/**
-	 * creates JSON files against the company financial reports table data. This is a one time execution but future work, condition can be added around it
-	 * so it only executes if it already hasnt been yet.
+	 * creates JSON files against the company financial reports table data.
 	 * @param pythonScript
 	 */
 	public static void extactDataToJSON(String pythonScript) {

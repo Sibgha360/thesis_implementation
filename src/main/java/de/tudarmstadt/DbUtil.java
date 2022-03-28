@@ -4,7 +4,14 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-class DbUtil {
+public class DbUtil {
+
+	public static String password = "root";
+	public static String user = "root";
+	public static String connUrl = "jdbc:mysql://localhost:3306/urdb?autoReconnect=true&useSSL=false";
+
+
+
 	public static void main(String args[]) {
 
 	}
@@ -12,8 +19,9 @@ class DbUtil {
 	public static void insertIndicator(Integer companyId, String indicator, Double value, String currency, String unit,
 			String year, int tableNumber, String context, int reportNumber, String pdfPath) throws Throwable {
 		Class.forName("com.mysql.jdbc.Driver");
-		Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false",
-				"sibgha", "1234asdf");
+
+		Connection con = DriverManager.getConnection(connUrl,
+				user, password);
 		// the mysql insert statement
 		String query = " insert ignore into indicator (company_id, indicator_name, value, unit, currency, year, table_number, report_number, context)"
 				+ " values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -40,7 +48,7 @@ class DbUtil {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
+					connUrl, user, password);
 
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt
@@ -65,7 +73,7 @@ class DbUtil {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
+					connUrl, user, password);
 
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select company_id from company");
@@ -92,7 +100,7 @@ class DbUtil {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
+					connUrl, user, password);
 
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select report.company_id, report_id, report_uri , company.company_name from report JOIN company on company.company_id = report.company_id where status = 0");
@@ -123,7 +131,7 @@ class DbUtil {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "sibgha", "1234asdf");
+					connUrl, user, password);
 
 			Statement stmt = con.createStatement();
 			Boolean b = stmt.execute("update report  SET report.status = 1 where report_id = "+ reportId.toString());
@@ -138,8 +146,8 @@ class DbUtil {
 	public static void insertAlias(String alias) {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false",
-					"root", "root");
+			Connection con = DriverManager.getConnection(connUrl,
+					user, password);
 
 			// the mysql insert statement
 			String query = " insert ignore into alias (alias)"
@@ -169,10 +177,10 @@ class DbUtil {
 			Class.forName("com.mysql.jdbc.Driver");
 
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+					connUrl, user, password);
 
 			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("select normalized_indicator_id from normalized_indicator where alias = " + alias + " and company_id = " + companyId + " and  year = "  + year + " and selected =1");
+			ResultSet rs = stmt.executeQuery("select normalized_indicator_id from normalized_indicator where alias = '" + alias + "' and company_id = '" + companyId + "' and  year = '"  + year + "' and selected = 1");
 
 			while (rs.next()) {
 				normalizedIndicatorId = rs.getInt("normalized_indicator_id");
@@ -216,62 +224,4 @@ class DbUtil {
 			return value;
 		}
 	} 
-}
-
-class Report {
-	private Integer companyId;
-	private Integer reportId;
-	private String reportUri;
-	private String companyName;
-	private String pdfPath;
-
-	public Report() {
-	}
-
-	public Report(Integer companyId, Integer reportId, String reportUri, String companyName) {
-		this.companyId = companyId;
-		this.reportId = reportId;
-		this.reportUri = reportUri;
-		this.companyName = companyName;
-	}
-
-	public String getCompanyName() {
-		return companyName;
-	}
-
-	public void setCompanyName(String companyName) {
-		this.companyName = companyName;
-	}
-
-	public Integer getCompanyId() {
-		return companyId;
-	}
-
-	public void setCompanyId(Integer companyId) {
-		this.companyId = companyId;
-	}
-
-	public Integer getReportId() {
-		return reportId;
-	}
-
-	public void setReportId(Integer reportId) {
-		this.reportId = reportId;
-	}
-
-	public String getReportUri() {
-		return reportUri;
-	}
-
-	public void setReportUri(String reportUri) {
-		this.reportUri = reportUri;
-	}
-
-	public String getPdfPath() {
-		return pdfPath;
-	}
-
-	public void setPdfPath(String pdfPath) {
-		this.pdfPath = pdfPath;
-	}
 }

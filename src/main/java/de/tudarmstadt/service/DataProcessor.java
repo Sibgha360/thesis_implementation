@@ -1,4 +1,4 @@
-package de.tudarmstadt;
+package de.tudarmstadt.service;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,6 +19,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import de.tudarmstadt.DbUtil;
+import de.tudarmstadt.Main;
+import de.tudarmstadt.Report;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -123,15 +126,15 @@ public class DataProcessor {
 			// find year indexes
 			Map<String, Integer> yearIndexMap = extractYesrIndex(jsonArray);
 
-			//yearIndexMap.forEach((s, q) -> System.out.println(s + ": " + q));
+			yearIndexMap.forEach((s, q) -> System.out.println(s + ": " + q));
 			
 			// unit
 			String unit = extractUnit(jsonArray);
-			//System.out.println(unit+"");
+			System.out.println(unit+"");
 
 			// currency
 			String currecy = extractCurrency(jsonArray);
-			//System.out.println(currecy);
+			System.out.println(currecy);
 			
 			if(currecy==null)
 			{
@@ -214,6 +217,9 @@ public class DataProcessor {
 						DbUtil.insertIndicator(companyId, indicator, value, currecy, unit, year, tableNumber, context,
 								reportNumber, fileName);
 					}
+					System.out.println("Indicator: "+ indicator);
+
+
 				} catch (Throwable e) {
 
 					System.err.println(e.toString());
@@ -221,8 +227,11 @@ public class DataProcessor {
 					System.err.println(companyName + ", " + tableNumber + ", " + ctx);
 					e.printStackTrace();
 				}
-				});				
-				
+				});
+				System.out.println("---------------------------------------------------------------------------------------------------------------------------");
+
+				System.out.println("------------------------------------------Sucessfully added in the table indicator------------------------------------------");
+				System.out.println("---------------------------------------------------------------------------------------------------------------------------");
 
 			});
 	}
@@ -307,7 +316,7 @@ public class DataProcessor {
 	private static Map<String, Integer> extractYesrIndex(JSONArray jsonArray) {
 		Map<String, Integer> yearIndexMap = new HashMap<String, Integer>();
 		jsonArray.forEach(object -> {
-//			System.out.println(object);
+			//System.out.println(object);
 			Set keySet = ((JSONObject) object).keySet();
 			Collection values = ((JSONObject) object).values();
 

@@ -1,4 +1,4 @@
-package de.tudarmstadt;
+package de.tudarmstadt.service;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,6 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.tudarmstadt.CSV;
+import de.tudarmstadt.DbUtil;
+import de.tudarmstadt.Main;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -63,7 +66,7 @@ public class DataNormalizingService {
 		Class.forName("com.mysql.jdbc.Driver");
 
 		Connection con = DriverManager.getConnection(
-				"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+				DbUtil.connUrl, "root", "root");
 
 		Statement stmt = con.createStatement();
 			String sql = "select normalized_indicator_id, company_id, year from normalized_indicator where"
@@ -87,7 +90,8 @@ public class DataNormalizingService {
 			}
 		}
 
-		con.close();}
+
+			con.close();}
 		catch (Throwable t)
 		{
 			t.printStackTrace();
@@ -105,11 +109,11 @@ public class DataNormalizingService {
 		//update selection flag
 		try {
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+					DbUtil.connUrl, "root", "root");
 
 
 			Statement stmt = con.createStatement();
-			String sql = "update normalized_indicator set selected = 1 where company_id = "+companyId+" and alias = "+alias+" and year = "+year+" ORDER BY value DESC limit 1";
+			String sql = "update normalized_indicator set selected = 1 where company_id = "+companyId+" and alias = '"+alias+"' and year = '"+year+"' ORDER BY value DESC limit 1";
 
 			Boolean b = stmt.execute(sql);
 			//+ " indicator_name like '" + ind + "' and  normalized_indicator_id > 0");
@@ -127,7 +131,7 @@ public class DataNormalizingService {
 	private static void updateAlias(String alias, String notRgx, StringBuilder rgx) {
 		try {
 			Connection con = DriverManager.getConnection(
-					"jdbc:mysql://localhost:3306/mydb?autoReconnect=true&useSSL=false", "root", "root");
+					DbUtil.connUrl, "root", "root");
 
 
 			Statement stmt = con.createStatement();
@@ -182,7 +186,11 @@ public class DataNormalizingService {
 		    }
 		    ObjectMapper mapper = new ObjectMapper();
 		    mapper.enable(SerializationFeature.INDENT_OUTPUT);
-		    mapper.writeValue(System.out, list);
+//		    mapper.writeValue(System.out, list);
+
+			System.out.println(list);
+
+			System.out.println("");
 		}
 
 
@@ -220,7 +228,9 @@ public class DataNormalizingService {
 	 */
 	public static void main(String[] args) throws FileNotFoundException, IOException, ParseException {
 		copyAliasesInMemory(Main.aliasFilePath);
+
 		assignAliases();
+
 	}
 
 }
